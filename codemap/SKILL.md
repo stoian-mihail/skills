@@ -1,7 +1,7 @@
 ---
 name: codemap
 description: >
-  Map one area of the codebase as a flow-ordered markdown code map of the
+  Map a module of the codebase as a flow-ordered markdown code map of the
   code as it exists today. Invoked explicitly with /codemap followed by a
   sentence describing the area. Do not activate on your own.
 argument-hint: "<sentence describing the area to map>"
@@ -9,17 +9,19 @@ argument-hint: "<sentence describing the area to map>"
 
 # Codemap
 
-You draw the journey of the data through an area of the code, as it exists
-today, into one markdown file. You read code; you never change it. The only
-file you write is the map, at `.codemaps/<slug>.md`.
+You draw the journey of the data through a module, as it exists today, into
+one markdown file. You read code; you never change it. The only file you
+write is the map, at `.codemaps/<slug>.md`.
 
-This is the map-only fraction of the `dont-rust` skill. Same tracing rules,
-same depth, no plan and no dictation.
+The unit of a map is the module. A flow is a path through it. A flow is never
+alone: flows share an entry point and a dispatch, share subsystems, and one
+flow writes what another reads. The map shows the flows and how they connect.
 
-The argument is a sentence: how the user would describe the area to a
+The argument is a sentence, how the user would describe the area to a
 colleague. "The part where a test bank statement gets generated and stored."
 "Whatever happens when the user downloads a certificate." Your first job is
-to find what they mean. Your second is to confirm it. Only then do you map.
+to find what they mean, and the module it belongs to. Your second is to
+confirm it. Only then do you map.
 
 Two other forms:
 
@@ -32,71 +34,88 @@ Two other forms:
 
 Turn the sentence into search terms: the domain nouns, the verbs, and their
 likely synonyms in code ("download" may be "export" or "stream"; "generate"
-may be "build", "render", "create"). Search where entry points live:
-
-- route paths and controller action names
-- Vue components, and the API paths they call
-- service and generator class names
-- Twig template names
-- console command names
-- Messenger message and handler names
+may be "build", "render", "create"). Search where entry points live: route
+paths and controller action names, Vue components and the API paths they
+call, service and generator class names, Twig template names, console
+commands, Messenger messages.
 
 Read the candidates you find, enough to know what each one actually does.
 Do not propose from file names alone. Rank them by how well what they do
 matches the sentence.
 
+Then find the module around the flow you located. Ask, for that flow:
+
+- what shares its entry point or its dispatch (the other arms of the same
+  `match`, the other actions of the same controller, the other components
+  on the same page)
+- what subsystems it calls (pools, helpers, renderers used by several flows)
+- what reads or writes the same data (the flow that lists or downloads what
+  this one stores)
+
+Each answer is a sibling flow or a subsystem flow. Together with the flow
+you located, they are the module.
+
 ## Phase 2: Propose
 
-Show the user what you think they meant, as a short outline, not a map:
-the entry point, the main hops in one line each, and where the flow ends.
+Show the user what you think they meant, as a short outline, not a map: the
+module, its flows in one line each, and which one they named.
 
-"I think you mean this: the generate button in TestDocumentCreate.vue posts
-to /test_documents/generate, the controller hands the fields to
-TestDocumentGenerator, which routes to BankStatementGenerator, renders HTML,
-converts it to PDF, and the controller persists the entity. Is that the
-flow?"
+"I think you mean the test document module. Flows: bank statement
+generation (the one you named), identity card generation, certificate
+generation, document listing and download, and the data pools they all draw
+from. Shall I map the module?"
 
-- Several areas match: show each as a one-line candidate and ask which.
+- Several modules match: show each as a one-line candidate and ask which.
 - Nothing matches: say so, and ask for a hint: a file, a URL path, a button
   label, a class name.
-- The sentence names one flow but the module has siblings (bank statement
-  next to identity card and certificate): map only the one asked for, and
-  mention the siblings in a line so the user can ask for them. If the
-  sentence names the module, map every flow in it.
+- The user wants only the one flow: map only that one, and list the siblings
+  under Nearby flows not mapped.
 
 The user answers. "Yes" means trace and write. Anything else means adjust
-and propose again: a different flow, a wider or narrower scope, an earlier
-entry point. Keep talking until they confirm. Never write a map before they
-have confirmed the outline.
+and propose again. Keep talking until they confirm. Never write a map before
+they have confirmed the outline.
 
 ## Phase 3: Trace
 
-Follow the data from the confirmed entry point inward, depth-first, until it
-comes to rest or leaves the system: a database write, a file on disk, an
-HTTP response, an external call. If the response is then consumed by the UI
-in a way that matters (a download starts, state updates), include those
-hops.
+For each flow, follow the data from its entry point inward, depth-first,
+until it comes to rest or leaves the system: a database write, a file on
+disk, an HTTP response, an external call. If the response is then consumed
+by the UI in a way that matters (a list refreshes, a download starts),
+include those hops.
 
 First enumerate. List every method the data passes through, in execution
 order, by actually following each call. Only then classify:
 
 **Key hop**: a method where the data is transformed, decided, stored, or
 crosses a boundary (UI to HTTP, controller to service, service to database,
-PHP to an external binary). Gets a letter, prose, and the lines that matter.
+PHP to an external binary). Gets a letter, a label, an anchor, a paragraph,
+and one line of code.
 
-**Pass-through**: a method the data crosses unchanged, plain delegation. Gets
-a thin line with its name and nothing else, so the path stays unbroken.
+**Context node**: a human action that starts the flow ("User clicks
+generate"), a boundary ("API endpoint receives"), or a method the data
+crosses unchanged. Gets a line with its name and nothing else, so the path
+stays unbroken.
 
-For every key hop, write down what it receives (type, shape, which keys are
-actually read), what it does with it, what it hands on or returns, and every
-branch that changes the path: each arm of a `match`, each condition that
-returns early or throws. A branch is enumerated, never summarized away. The
-lines that matter are the lines that do those things, usually three to
-eight, copied as they are in the source. Not one line, not the whole method.
+**Branches become flows.** A `match` or `if` that sends the data down
+different paths is not drawn as a branch inside a hop. Each arm is a flow of
+its own. The hop that dispatches names the arms and which flow each one is.
+
+**Shared parts are drawn once.** The first flow that uses a shared prefix
+(Vue to controller to generator) or a shared suffix (the controller
+persisting the result) gets it in full, with letters. Every later flow shows
+the shared part as context nodes that name the hop where it was detailed:
+"*TestDocumentController persists the entity (1f)*".
+
+**Subsystems are flows.** A pool, a renderer, a helper used by several flows
+is its own numbered flow, mapped once. A hop in a request flow that uses it
+says so: "uses 5b".
+
+**Data handoffs are stated at both ends.** "Stores the entity that 4b
+lists." "Reads what 1f stored."
 
 Letters follow execution order strictly, depth-first: 1a, 1b, 1c in the
 order the code runs. A hop inside a method is nested under the hop that
-entered it. Never assign letters in any other order.
+entered it. The tree and the letters have one ordering, never two.
 
 When a call cannot be resolved statically, do not guess. Mark the node
 unresolved, say what you found (the candidates, the count), and list it in
@@ -127,33 +146,55 @@ the Unresolved section.
 
 ## Phase 4: Write
 
-Write `.codemaps/<slug>.md`. The slug is short and comes from the confirmed
-outline, not from the sentence. Suggest committing the folder: a map is
+Write `.codemaps/<slug>.md`. The slug names the module, short, taken from
+the confirmed outline. Suggest committing the folder: a map is
 documentation, and its header says how stale it is.
 
-The file has:
+The file, top to bottom:
 
-1. A title, then one line: mapped at `<short commit hash>`, the date, and
-   the entry points.
-2. A summary paragraph of what the area does, referencing the flows by
-   their letter ranges: "bank statement generation [1a–1f]".
-3. One section per flow: a numbered heading, one line on where it starts
-   and ends, then the tree as a nested list.
-4. **Unresolved**: every node you could not follow, with what you found.
-5. **Nearby flows not mapped**: the siblings, one line each, if any.
+1. **Title**: the module and the system. Then one line: created on, mapped
+   at `<short commit hash>`.
+2. **Abstract**: one paragraph. What the module is, what stack it runs on,
+   what it produces, and every flow with its letter range: "bank statement
+   generation [1a–1f]".
+3. **Module**: how the flows connect, one line per connection: shared
+   entry, shared dispatch, subsystems used, data handed from one flow to
+   another.
+4. **Flows**, one section each: a numbered heading, a one-line
+   description, a collapsed block, then the tree.
+5. **Unresolved**: every node you could not follow, with what you found.
+6. **Nearby flows not mapped**: only when the user narrowed the scope.
 
-A key hop in the tree is one bullet: the bold letter and a verb-first label
-the length of a commit subject, then a file link relative to the repository
-root with the line as a fragment, so it opens in the editor and on GitHub.
-Under it, indented: the prose paragraph (receives, does, hands on, branches),
-then the lines that matter in a code block, as they are in the source.
+The collapsed block is `<details><summary>See more</summary>` and holds
+what belongs to the flow as a whole, not to one hop: its purpose, its
+inputs and outputs, the error path, what it shares with other flows. It
+collapses in Cursor's preview and on GitHub.
 
-A pass-through is one bullet in italics with the method name and nothing
-else. Nesting follows the call structure.
+The tree is a nested list. A key hop is:
 
-Read `example-map.md` in this skill's folder for the shape and the depth.
-It is a guideline, not a template: adapt names, depth, and the resolution
-rules to the project in front of you.
+    - **1b** Controller calls the generator · [TestDocumentController.php:63](src/Controller/TestDocumentController.php#L63)
+      Receives `type` and `fields` from the JSON body and checks only that both
+      exist. Hands them to the generator and gets back a path relative to the
+      documents directory. Builds the entity from it in 1f.
+      `$relativePath = $this->generator->generate($type, $fields);`
+
+Bold letter, then a verb-first label the length of a commit subject, then
+the anchor: a link relative to the repository root with the line as a
+fragment, so it opens in the editor and on GitHub. Under it, the paragraph:
+two to four sentences, what the hop receives, what it does with it, what it
+hands on, and the branch or the cross-reference if there is one. Then one
+line of code, the representative statement, as it is in the source. One
+line: the paragraph carries the understanding, the line anchors it.
+
+A context node is one bullet in italics with its name and nothing else.
+Nesting follows the call structure.
+
+Skim the bold lines and you have the shape. Read the paragraphs and you
+have the journey. Nobody has to click.
+
+Read `example-map.md` in this skill's folder for the shape and the depth,
+at module scale. It is a guideline, not a template: adapt names, stack, and
+the resolution rules to the project in front of you.
 
 When the file is written, tell the user where it is and repeat the
 Unresolved list in chat. That list is where they can help.
