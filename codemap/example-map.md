@@ -10,22 +10,34 @@ Created 2026-10-29, mapped at `a1b2c3d`.
 This module generates realistic Romanian test documents (bank statements,
 identity cards, company registration certificates) in a PHP/Symfony backend
 with a Vue frontend, using GD for image documents and wkhtmltopdf for PDF
-ones, and stores one `TestDocument` entity per generated file. Flows: bank
-statement generation [1a–1f], identity card generation [2a–2g], certificate
-generation [3a–3e], document listing and download [4a–4e], and the
-deterministic data pools [5a–5e] that the three generators draw from.
+ones, and stores one `TestDocument` entity per generated file.
+
+The module has five flows. Each is named and defined where it is numbered:
+
+- **Flow 1 — bank statement generation [1a–1f]**: from the generate button
+  to a stored PDF and its entity, drawn on the transactions pool.
+- **Flow 2 — identity card generation [2a–2g]**: from the generate button
+  to a stored PNG with MRZ and diacritics.
+- **Flow 3 — certificate generation [3a–3e]**: from the generate button to
+  a stored PDF registration certificate.
+- **Flow 4 — document listing and download [4a–4e]**: from opening the page
+  to streaming a stored file back to the browser.
+- **Flow 5 — deterministic data pools [5a–5e]**: the fake personal, company
+  and transaction data the three generators draw from.
 
 ## Module
 
-- Flows 1, 2 and 3 share one entry: `TestDocumentCreate.vue` posts to
+- Flow 1 (bank statement), 2 (identity card) and 3 (certificate) share one
+  entry: `TestDocumentCreate.vue` posts to
   `TestDocumentController::generateAction`, which calls
   `TestDocumentGenerator::generate`. The `match` on type in 1c is where they
   split. The shared part is detailed in flow 1 and shown as context in 2 and 3.
-- Flows 1, 2 and 3 share one exit: the controller persists the entity (1f)
-  and returns the path.
-- Flows 2 and 3 draw their fake personal and company data from the pools in
-  flow 5 (2b uses 5b and 5e; 3c uses 5c). Flow 1 uses 5d for transactions.
-- Flow 4 lists and downloads the entities that 1f stores.
+- Flows 1 (bank statement), 2 (identity card) and 3 (certificate) share one
+  exit: the controller persists the entity (1f) and returns the path.
+- Flows 2 (identity card) and 3 (certificate) draw their fake personal and
+  company data from the pools in flow 5 (data pools) (2b uses 5b and 5e; 3c
+  uses 5c). Flow 1 uses 5d for transactions.
+- Flow 4 (listing and download) lists and downloads the entities that 1f stores.
 
 ## 1. Bank statement generation
 

@@ -154,12 +154,20 @@ The file, top to bottom:
 
 1. **Title**: the module and the system. Then one line: created on, mapped
    at `<short commit hash>`.
-2. **Abstract**: one paragraph. What the module is, what stack it runs on,
-   what it produces, and every flow with its letter range: "bank statement
-   generation [1a–1f]".
+2. **Abstract**: one paragraph. What the module is, what stack it runs
+   on, what it produces. Then a flow index: a numbered list binding, in
+   the same line, each flow's number, its name, a one-sentence
+   definition, and its letter range:
+   "- **Flow 1 — bank statement generation [1a–1f]**: the user picks a
+   type, the generator renders the PDF, the controller stores the entity."
+   Name and define at the same time, before anything references them: a
+   reader must be able to learn what every flow is from this list alone,
+   and no part of the map may use a flow's number before this index
+   exists.
 3. **Module**: how the flows connect, one line per connection: shared
    entry, shared dispatch, subsystems used, data handed from one flow to
-   another.
+   another. Re-bind the name on every reference — "flow 1 (bank
+   statement generation)" — so each connection line stands alone.
 4. **Flows**, one section each: a numbered heading, a one-line
    description, a collapsed block, then the tree.
 5. **Unresolved**: every node you could not follow, with what you found.
