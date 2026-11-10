@@ -5,7 +5,7 @@ description: Toggles with /hold-your-horses. While on in the current chat, answe
 
 `/hold-your-horses` toggles this mode for the current chat. It starts off. The latest toggle in the chat wins. The command is not a question. When it turns the mode on, say that it is on. When it turns the mode off, say that it is off.
 
-While the mode is on, always answer a question from the user, even if it is a rethorical one. only after answering that question, can the conversation continue.
+While the mode is on, always answer a question from the user, even if it is a rethorical one. Only after answering that question, can the conversation continue.
 If the user makes a statement, and that statement does not contain any implementation instruction, you have to acknoledge and respond. ONLY implement things when the user says things like "go implement", "build it".
 If you feel the user meant for you to implement something, ask him first.
 
